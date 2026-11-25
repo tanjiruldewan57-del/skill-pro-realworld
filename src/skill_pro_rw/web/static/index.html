@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill-Pro // SRE Procedural Memory &amp; Non-Parametric PPO</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Telemetry Bar -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">SP</div>
+        <div>
+          <h1>Skill-Pro <span class="muted">// SRE Procedural Engine</span></h1>
+          <p class="subtitle">Skill-MDP + Non-Parametric PPO Gate + Option B Hybrid Verifier</p>
+        </div>
+      </div>
+
+      <div class="status-cluster">
+        <span id="sseBadge" class="pill pill-warn"><span class="dot"></span>Connecting SSE...</span>
+        <span id="modeBadge" class="pill pill-info">Mode: simulator</span>
+        <span id="verifierBadge" class="pill pill-neutral">Verifier: offline_proxy</span>
+        <span id="iterBadge" class="pill pill-neutral">Iter #0</span>
+        <button id="openConfigBtn" class="btn btn-secondary" type="button">Backend Config</button>
+        <button id="resetBtn" class="btn btn-danger" type="button">Reset Sandbox</button>
+      </div>
+    </header>
+
+    <!-- Execution Controls -->
+    <section class="controls-bar card">
+      <div class="control-group">
+        <label for="scenarioSelect">Incident Scenario</label>
+        <select id="scenarioSelect">
+          <option value="">All 6 SRE Scenarios (Round-Robin)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="ablationSelect">Execution / Ablation Mode</label>
+        <select id="ablationSelect">
+          <option value="full">Skill-Pro Full (NP-PPO + PPO Gate)</option>
+          <option value="no_skill">Baseline: No Skill (Stateless + Episodic Cost)</option>
+          <option value="no_ppo_gate">Ablation: No PPO Gate (Unverified Edits)</option>
+          <option value="fifo_pruning">Ablation: FIFO Pruning (No LCB Score)</option>
+        </select>
+      </div>
+
+      <div class="control-group compact">
+        <label for="episodesInput">Episodes</label>
+        <select id="episodesInput">
+          <option value="4">4 Episodes</option>
+          <option value="6" selected>6 Episodes</option>
+          <option value="8">8 Episodes</option>
+          <option value="12">12 Episodes</option>
+        </select>
+      </div>
+
+      <div class="control-actions">
+        <button id="runBatchBtn" class="btn btn-primary" type="button">Run Triage Batch</button>
+      </div>
+    </section>
+
+    <!-- Top KPI Strip -->
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <span class="kpi-label">Mean Reward / Resolution</span>
+        <strong id="kpiReward" class="kpi-value">0.000</strong>
+        <span id="kpiResolution" class="kpi-sub">0% resolved across 0 episodes</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Skill Reuse Rate</span>
+        <strong id="kpiReuse" class="kpi-value">0.0%</strong>
+        <span class="kpi-sub">Episodes guided by procedural Skills</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Procedural Memory Size</span>
+        <strong id="kpiMemTokens" class="kpi-value">0 tok</strong>
+        <span id="kpiSkillCount" class="kpi-sub">0 active skills</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Token Compression</span>
+        <strong id="kpiSavings" class="kpi-value">0.0%</strong>
+        <span id="kpiTokensDetail" class="kpi-sub">0 vs 0 episodic tokens</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">PPO Gate Pass Rate</span>
+        <strong id="kpiGateRate" class="kpi-value">0.0%</strong>
+        <span id="kpiGateCount" class="kpi-sub">0 verification checks</span>
+      </article>
+    </section>
+
+    <!-- Main Two-Column Workspace -->
+    <main class="workspace-grid">
+      <!-- Left Column: Live Incident Trace + Charts -->
+      <div class="col-stack">
+        <section class="card panel">
+          <div class="panel-header">
+            <h2>Execution Trace &amp; Step Inspector</h2>
+            <span id="liveRunIndicator" class="badge badge-muted">Idle</span>
+          </div>
+
+          <div class="split-trace">
+            <div class="episode-list" id="episodeList">
+              <div class="empty-state">Run a triage batch to watch Skill-MDP rollouts step-by-step.</div>
+            </div>
+            <div class="trace-detail" id="traceDetail">
+              <div class="empty-state">Select an episode to inspect its active Skill, tool calls, observations, and termination signals.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel">
+          <div class="panel-header">
+            <h2>Reward Trajectory &amp; Token Compression</h2>
+            <span class="muted small">Last 20 Episodes</span>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-box">
+              <h3>Episode Reward (0.0 - 1.0)</h3>
+              <svg id="rewardChart" class="chart-svg" viewBox="0 0 420 150" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="chart-box">
+              <h3>Prompt Tokens: Skill-Pro vs Episodic Baseline</h3>
+              <svg id="tokenChart" class="chart-svg" viewBox="0 0 420 150" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Skill Pool + PPO Gate Audit -->
+      <div class="col-stack">
+        <section class="card panel">
+          <div class="panel-header">
+            <h2>Procedural Skill Pool &lt;I, &pi;, &beta;&gt;</h2>
+            <span id="poolCapacityBadge" class="badge badge-info">0 / 10</span>
+          </div>
+          <div class="scroll-list" id="skillPoolList"></div>
+        </section>
+
+        <section class="card panel">
+          <div class="panel-header">
+            <h2>Non-Parametric PPO Gate &amp; Semantic Gradients</h2>
+            <span class="muted small">L_CLIP Verification Audit</span>
+          </div>
+          <div class="scroll-list" id="auditList">
+            <div class="empty-state">No PPO Gate evolution cycles triggered yet. Run at least 4 episodes.</div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Bottom Raw Backend Event Stream -->
+    <section class="card panel event-panel">
+      <div class="panel-header">
+        <h2>Live Backend Telemetry Stream (SSE)</h2>
+        <div class="filter-pills" id="eventFilters">
+          <button class="filter-pill active" data-filter="all" type="button">All</button>
+          <button class="filter-pill" data-filter="step_executed" type="button">Steps</button>
+          <button class="filter-pill" data-filter="skill_selected" type="button">Selection</button>
+          <button class="filter-pill" data-filter="semantic_gradient" type="button">Gradients</button>
+          <button class="filter-pill" data-filter="ppo_gate_decision" type="button">PPO Gate</button>
+          <button class="filter-pill" data-filter="pool_maintained" type="button">Pruning</button>
+        </div>
+      </div>
+      <div class="event-stream" id="eventStream"></div>
+    </section>
+  </div>
+
+  <!-- Backend Config Modal -->
+  <div id="configModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+    <div class="modal-card">
+      <div class="panel-header">
+        <h2 id="configModalTitle">Option B Hybrid Backend Configuration</h2>
+        <button id="closeConfigBtn" class="btn btn-secondary" type="button">Close</button>
+      </div>
+      <form id="configForm" class="config-form">
+        <div class="form-row">
+          <label for="cfgMode">Execution Mode</label>
+          <select id="cfgMode">
+            <option value="simulator">Simulator (Offline Deterministic SRE Sandbox)</option>
+            <option value="hybrid">Hybrid Option B (Cloud Executor + Local Proxy Verifier)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="cfgVerifierMode">Logprob Verifier Mode</label>
+          <select id="cfgVerifierMode">
+            <option value="offline_proxy">offline_proxy (Zero-GPU Token Alignment Proxy)</option>
+            <option value="local_openai">local_openai (Local vLLM / Ollama 127.0.0.1)</option>
+            <option value="local_hf">local_hf (Local HuggingFace Transformers)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="cfgExecUrl">Cloud Executor Base URL</label>
+          <input id="cfgExecUrl" type="text" placeholder="https://api.openai.com/v1">
+        </div>
+        <div class="form-row">
+          <label for="cfgExecModel">Cloud Executor Model</label>
+          <input id="cfgExecModel" type="text" placeholder="gpt-4o-mini">
+        </div>
+        <div class="form-row">
+          <label for="cfgProxyUrl">Local Proxy Verifier URL</label>
+          <input id="cfgProxyUrl" type="text" placeholder="http://127.0.0.1:11434/v1">
+        </div>
+        <div class="form-row">
+          <label for="cfgProxyModel">Local Proxy Verifier Model</label>
+          <input id="cfgProxyModel" type="text" placeholder="qwen3:4b">
+        </div>
+        <p id="cfgKeyNotice" class="muted small"></p>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Apply Backend Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
